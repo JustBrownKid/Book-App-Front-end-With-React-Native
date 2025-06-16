@@ -1,4 +1,5 @@
 import React from 'react';
+import { books } from '../data/books';
 import {
   View,
   Text,
@@ -8,78 +9,105 @@ import {
   StatusBar,
   TouchableOpacity,
   ScrollView,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const Detail = ({ route }) => {
+const Detail = ({ route, navigation }) => {
   const { item } = route.params;
 
-  // Sample PDF text (you can replace this with actual extracted content)
-  const pdfText = `
-    “All animals are equal, but some animals are more equal than others.”
-    - From Animal Farm by George Orwell
-
-    Chapter 1:
-    Mr. Jones, of the Manor Farm, had locked the hen-houses for the night...
-    (continued...)
-
-    Chapter 2:
-    Three nights later old Major died peacefully in his sleep. His body was buried...
-    (continued...)
-
-    Chapter 3:
-    The pigs now revealed that during the past three months they had taught themselves to read and write...
-    (continued...)
-  `;
+  // Render each book in the list as a tappable item that navigates to its detail
+  const renderBookItem = ({ item: book }) => (
+    <TouchableOpacity
+      style={styles.similarBookCard}
+      activeOpacity={0.7}
+      onPress={() => navigation.push('Detail', { item: book })}
+    >
+      <Image source={{ uri: book.image }} style={styles.similarBookImage} />
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Book Info Card */}
-        <View style={styles.card}>
-          <Image source={{ uri: item.image }} style={styles.image} />
-          <View style={styles.info}>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.author}>by {item.author}</Text>
-            <View style={styles.ratingRow}>
-              <Ionicons name="star" size={16} color="#f1c40f" />
-              <Ionicons name="star" size={16} color="#f1c40f" />
-              <Ionicons name="star" size={16} color="#f1c40f" />
+        {/* Book Header */}
+        <View style={styles.header}>
+          <Image source={{ uri: item.image }} style={styles.bookImage} />
+          <View style={styles.bookInfo}>
+            <Text style={styles.bookTitle}>{item.title}</Text>
+            <Text style={styles.bookAuthor}>by {item.author}</Text>
+
+            {/* Star Rating */}
+            <View style={styles.ratingContainer}>
+              {[...Array(3)].map((_, i) => (
+                <Ionicons key={i} name="star" size={16} color="#f1c40f" />
+              ))}
               <Ionicons name="star-half" size={16} color="#f1c40f" />
               <Ionicons name="star-outline" size={16} color="#f1c40f" />
               <Text style={styles.ratingText}> 3.5</Text>
+            </View>
+
+            {/* Extra Info */}
+            <View style={styles.extraInfo}>
+              <Text style={styles.infoText}>Language: {item.language}</Text>
+              <Text style={styles.infoText}>Pages: {item.page}</Text>
+              <Text style={styles.infoText}>Tags: {item.tags?.join(', ')}</Text>
             </View>
           </View>
         </View>
 
         {/* Description */}
+        <Text style={styles.sectionTitle}>Description</Text>
         <Text style={styles.description}>{item.description}</Text>
 
-        {/* Options */}
-        <Text style={styles.copyText}>Options</Text>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={[styles.button, styles.buttonRead]}>
-            <Ionicons name="book-outline" size={16} color="#fff" />
-            <Text style={styles.buttonTextWhite}>Read</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.buttonDownload]}>
-            <Ionicons name="cloud-download-outline" size={16} color="#fff" />
-            <Text style={styles.buttonTextWhite}>Download</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.buttonShare]}>
-            <Ionicons name="share-social-outline" size={16} color="#fff" />
-            <Text style={styles.buttonTextWhite}>Share</Text>
-          </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={styles.actionsRow}>
+          <ActionButton icon="book-outline" label="Read" style={styles.readButton} />
+          <ActionButton icon="cloud-download-outline" label="Download" style={styles.downloadButton} />
+          <ActionButton icon="share-social-outline" label="Share" style={styles.shareButton} />
         </View>
 
-        {/* PDF Text View */}
-        <Text style={styles.copyText}>Preview PDF</Text>
-        <Text style={styles.pdfText}>{pdfText}</Text>
+        {/* Similar Books */}
+        {books.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Similar Books</Text>
+            <FlatList
+              data={books}
+              renderItem={renderBookItem}
+              keyExtractor={(book) => book.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.similarBooksList}
+            />
+          </>
+        )}
+
+        {/* Books You May Like */}
+        {books.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Books You May Like</Text>
+            <FlatList
+              data={books}
+              renderItem={renderBookItem}
+              keyExtractor={(book) => book.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.similarBooksList}
+            />
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 };
+
+const ActionButton = ({ icon, label, style }) => (
+  <TouchableOpacity style={[styles.actionButton, style]} activeOpacity={0.7}>
+    <Ionicons name={icon} size={16} color="#fff" />
+    <Text style={styles.actionButtonText}>{label}</Text>
+  </TouchableOpacity>
+);
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -88,59 +116,71 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 16,
+    paddingBottom: 30,
   },
-  card: {
+  header: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  image: {
-    width: 140,
-    height: 210,
+  bookImage: {
+    width: 130,
+    height: 200,
     borderRadius: 10,
     marginRight: 16,
   },
-  info: {
+  bookInfo: {
     flex: 1,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  bookTitle: {
+    fontSize: 21,
+    fontWeight: '800',
     color: '#2c3e50',
+    lineHeight: 22,
   },
-  author: {
+  bookAuthor: {
     fontSize: 14,
     color: '#7f8c8d',
     marginVertical: 4,
   },
-  ratingRow: {
+  ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 6,
+    marginTop: 6,
   },
   ratingText: {
     fontSize: 14,
     marginLeft: 4,
     color: '#333',
   },
+  extraInfo: {
+    marginTop: 12,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#555',
+    marginVertical: 2,
+  },
+  sectionTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#2c3e50',
+    marginTop: 10,
+    marginBottom: 5,
+  },
   description: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#444',
     lineHeight: 22,
-    marginVertical: 12,
+    marginBottom: 5,
   },
-  copyText: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 8,
-    color: '#2c3e50',
-  },
-  buttonRow: {
+  actionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 10,
+    marginTop: 15,
   },
-  button: {
+  actionButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -149,25 +189,32 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginHorizontal: 4,
   },
-  buttonDownload: {
-    backgroundColor: '#27ae60',
-  },
-  buttonRead: {
+  readButton: {
     backgroundColor: '#2980b9',
   },
-  buttonShare: {
+  downloadButton: {
+    backgroundColor: '#27ae60',
+  },
+  shareButton: {
     backgroundColor: '#8e44ad',
   },
-  buttonTextWhite: {
+  actionButtonText: {
     marginLeft: 6,
     color: '#fff',
     fontWeight: 'bold',
   },
-  pdfText: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#555',
-    marginTop: 12,
+  similarBooksList: {
+    paddingVertical: 8,
+  },
+  similarBookCard: {
+    width: 100,
+    marginRight: 12,
+    alignItems: 'center',
+  },
+  similarBookImage: {
+    width: 100,
+    height: 150,
+    borderRadius: 6,
   },
 });
 
